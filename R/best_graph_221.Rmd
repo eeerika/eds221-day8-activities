@@ -1,0 +1,121 @@
+---
+title: "Best graph"
+author: "Erika"
+date: "2022-08-17"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(ggrepel)
+```
+
+```{r}
+sf_emissions <- read_csv(here("data", "San_Francisco_Communitywide_Greenhouse_Gas_Inventory.csv")) %>%
+  janitor::clean_names()
+```
+
+Create a summary table of total annual greenhouse gas emissions (only from Emissions_mtCO2e column) by sector_general
+
+```{r}
+tot_ann_ghg_summ_sect_gen <- sf_emissions %>%
+  group_by(sector_general) %>%
+  summarize(tot_ann_ghg = sum(emissions_mt_co2e, na.rm = TRUE))
+```
+
+Create a summary table of total annual greenhouse gas emissions (only from Emissions_mtCO2e column) by year and commodity type
+
+```{r}
+tot_ann_ghg_summ_yr_comm_type <- sf_emissions %>%
+  group_by(calendar_year, commodity_type) %>%
+  summarize(tot_ann_ghg = sum(emissions_mt_co2e, na.rm = TRUE))
+```
+
+Create a subset of the data that only contains observations from 2005 on, only for observations where Sector_Detail2 contains the pattern “PG&E”, then limit to columns Calendar_Year, Sector_Detail2 and Emissions_mtCO2e.
+
+```{r}
+subset_2005 <- sf_emissions %>%
+  filter(calendar_year >= 2005 & str_detect(sector_detail2, "PG&E")) %>%
+  select(calendar_year, sector_detail2, emissions_mt_co2e)
+```
+
+## Creating a good graph using this data
+
+```{r}
+tot_ann_ghg_summ_sect_gen_yr <- sf_emissions %>%
+  group_by(sector_general, calendar_year) %>%
+  summarize(tot_ann_ghg = sum(emissions_mt_co2e, na.rm = TRUE))
+
+data_label <- tot_ann_ghg_summ_sect_gen_yr
+data_label$label <- NA
+data_label$label[which(data_label$calendar_year == max(data_label$calendar_year))] <- data_label$sector_general[which(data_label$calendar_year == max(data_label$calendar_year))]
+
+```
+
+```{r}
+emissions_elec_gas <- sf_emissions %>%
+  filter(commodity_type %in% c("Electricity", "Natural Gas")) %>%
+  group_by(calendar_year, commodity_type) %>%
+  summarize(tot_ann_ghg = sum(emissions_mt_co2e, na.rm = TRUE))
+
+data_label <- emissions_elec_gas
+data_label$label <- NA
+data_label$label[which(data_label$calendar_year == max(data_label$calendar_year))] <- data_label$commodity_type[which(data_label$calendar_year == max(data_label$calendar_year))]
+```
+
+
+```{r}
+ggplot(data = data_label, aes(x = calendar_year, y = tot_ann_ghg)) +
+  geom_line(aes(color = commodity_type)) +
+  geom_label_repel(aes(label = label), 
+                   label.size = NA,
+                   segment.color = 'transparent',
+                   family = "Times New Roman",
+                   nudge_x = 2) +
+  theme_minimal() +
+  theme(panel.grid.minor.x=element_blank(),
+        panel.grid.major.x=element_blank(),
+        panel.grid.minor.y=element_blank(),
+        panel.grid.major.y=element_blank(),
+        text=element_text(size=10,  family="Times New Roman"),
+        legend.position = "none") +
+  scale_color_manual(values = c("goldenrod", "darkgreen")) +
+  scale_x_continuous(limits=c(1990, 2025),
+                     breaks = scales::pretty_breaks(n = 15)) +
+  labs(title = "Change in emissions from Natural Gas vs. Electricity commodity type over time in the San Francisco area",
+       subtitle = "Data points from 1990-2019 (from years 1990, 2000, 2005, 2012, 2015, 2016, 2017, 2018, and 2019).",
+       x = "Year",
+       y = "Total Emissions (mt CO2e)")
+  
+```
+
+## Creating a good graph using this data p2
+
+```{r}
+emissions_elec_gas_2015_2019 <- emissions_elec_gas %>%
+  filter(calendar_year >= 2015)
+```
+
+
+```{r}
+ggplot(data = emissions_elec_gas_2015_2019, aes(x = calendar_year, y = tot_ann_ghg)) +
+  geom_col(aes(fill = commodity_type),
+           position = "dodge2") +
+  #facet_wrap(~commodity_type) +
+  theme_minimal() +
+  theme(panel.grid.minor.x=element_blank(),
+        panel.grid.major.x=element_blank(),
+        panel.grid.minor.y=element_blank(),
+        panel.grid.major.y=element_blank(),
+        text=element_text(size=10,  family="Times New Roman"),
+        plot.caption = element_text(hjust = 0, face = "italic"))+
+  scale_fill_manual(values = c("goldenrod", "darkgreen")) +
+  labs(title = "San Francisco emissions from Electricity vs. Natural Gas commodity type, 2015-2019",
+       x = "Year",
+       y = "Total Emissions (mt CO2e)",
+       fill = "Commodity Type",
+       caption = "Figure 1. Electricity emissions in San Francisco have gone down from 2015 to 2019 while natural gas emissions have remained relatively the same. \nNatural gas emissions each year have also remained much higher than electricity emissions each year.")
+```
+

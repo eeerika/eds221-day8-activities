@@ -1,0 +1,70 @@
+---
+title: "Worst graph"
+author: "Erika"
+date: "2022-08-17"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(here)
+library(png)
+library(grid)
+```
+
+```{r, include=FALSE, echo = TRUE, message = FALSE, warning = FALSE}
+space_launches <- read_csv(here("data", "space_launches.csv")) %>%
+  select(category, agency_type, launch_year) %>%
+  group_by(category, agency_type, launch_year) %>%
+  summarize(counts = n()) %>%
+  drop_na()
+
+portal <- readPNG(here("data", "portal.png"))
+```
+
+```{r}
+ggplot(data = space_launches, 
+       aes(x = launch_year, 
+           y = counts)) +
+  annotation_custom(rasterGrob(portal, 
+                               width = unit(1,"npc"), 
+                               height = unit(1,"npc")), 
+                    -Inf, Inf, -Inf, Inf) +
+  geom_point(aes(shape = category, 
+                 color = agency_type)) +
+  scale_color_manual(values = c("beige", "bisque", "azure")) +
+  scale_shape_manual(values = c(15, 22)) +
+  theme_grey() +
+  labs(shape = "the letters F and O",
+       color = "three different words that have meanings",
+       title = "the points look like a mountain with a valley or maybe an upside down measuring cup",
+       subtitle = "you might be able to still see that if you look hard enough",
+       x = "numbers to 200 or so",
+       y = "numbers to 2000 or so") +
+  theme(plot.title = element_text(size = 5, 
+                                  color = "deeppink4",
+                                  family = "Comic Sans MS"), 
+        plot.subtitle = element_text(size = 12, 
+                                  color = "red",
+                                  family = "Comic Sans MS"),
+        axis.text.y = element_text(angle = 150,
+                                   color = "burlywood1",
+                                   family = "Comic Sans MS"), 
+        axis.text.x = element_text(angle = -150,
+                                   color = "antiquewhite4",
+                                   family = "Comic Sans MS"), 
+        axis.title.y = element_text(angle = -150, 
+                                    size = 5, 
+                                    color = "cyan1",
+                                    family = "Comic Sans MS"), 
+        axis.title.x = element_text(angle = 120, 
+                                    size = 5, 
+                                    color = "chartreuse",
+                                    family = "Comic Sans MS")) +
+  scale_x_continuous(breaks = scales::pretty_breaks(n = 15)) +
+  scale_y_continuous(breaks = scales::pretty_breaks(n = 15))
+  
+```
+

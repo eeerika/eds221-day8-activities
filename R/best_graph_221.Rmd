@@ -10,6 +10,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 library(tidyverse)
 library(ggrepel)
+library(scales)
 ```
 
 ```{r}
@@ -41,7 +42,7 @@ subset_2005 <- sf_emissions %>%
   select(calendar_year, sector_detail2, emissions_mt_co2e)
 ```
 
-## Creating a good graph using this data
+## Creating a good graph using this data - experimenting
 
 ```{r}
 tot_ann_ghg_summ_sect_gen_yr <- sf_emissions %>%
@@ -91,14 +92,14 @@ ggplot(data = data_label, aes(x = calendar_year, y = tot_ann_ghg)) +
   
 ```
 
-## Creating a good graph using this data p2
+## Creating a good graph using this data - final graphs
 
 ```{r}
 emissions_elec_gas_2015_2019 <- emissions_elec_gas %>%
   filter(calendar_year >= 2015)
 ```
 
-
+## Bar graph version
 ```{r}
 ggplot(data = emissions_elec_gas_2015_2019, aes(x = calendar_year, y = tot_ann_ghg)) +
   geom_col(aes(fill = commodity_type),
@@ -116,6 +117,30 @@ ggplot(data = emissions_elec_gas_2015_2019, aes(x = calendar_year, y = tot_ann_g
        x = "Year",
        y = "Total Emissions (mt CO2e)",
        fill = "Commodity Type",
-       caption = "Figure 1. Electricity emissions in San Francisco have gone down from 2015 to 2019 while natural gas emissions have remained relatively the same. \nNatural gas emissions each year have also remained much higher than electricity emissions each year.")
+       caption = "Figure 1. Electricity emissions in San Francisco have gone down from 2015 to 2019 while natural gas emissions have remained relatively the same. \nNatural gas emissions each year have also remained much higher than electricity emissions each year.") +
+  scale_y_continuous(label=comma)
+```
+
+
+## Line graph version
+```{r}
+ggplot(data = emissions_elec_gas_2015_2019, aes(x = calendar_year, y = tot_ann_ghg)) +
+  geom_line(size = 1.5,
+            aes(color = commodity_type)) +
+  #facet_wrap(~commodity_type) +
+  theme_minimal() +
+  theme(panel.grid.minor.x=element_blank(),
+        panel.grid.major.x=element_blank(),
+        panel.grid.minor.y=element_blank(),
+        panel.grid.major.y=element_blank(),
+        text=element_text(size=10,  family="Times New Roman"),
+        plot.caption = element_text(hjust = 0, face = "italic"))+
+  scale_color_manual(values = c("goldenrod", "darkgreen")) +
+  labs(title = "San Francisco emissions from Electricity vs. Natural Gas commodity type, 2015-2019",
+       x = "Year",
+       y = "Total Emissions (mt CO2e)",
+       color = "Commodity Type",
+       caption = "Figure 1. Electricity emissions in San Francisco have gone down from 2015 to 2019 while natural gas emissions have remained relatively the same. \nNatural gas emissions each year have also remained much higher than electricity emissions each year.") +
+  scale_y_continuous(label=comma)
 ```
 
